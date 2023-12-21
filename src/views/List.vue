@@ -61,6 +61,7 @@ import { removeDiacritics } from '@/utils/string';
 import { RouteName } from '@/enum/RouteName';
 import { useTasksStore } from '@/store/tasks';
 import { Task } from '@/types/task';
+import { useTask } from '@/composables/task';
 
 enum Filter {
   ALL,
@@ -69,8 +70,6 @@ enum Filter {
 }
 
 const query = ref('');
-
-const loading = ref(false);
 
 const hasError = ref(false);
 
@@ -108,16 +107,13 @@ const toggleTask = (task: Task) => {
   }
 }
 
-const getTasks = async () => {
+const { perform: getTasks, isRunning: loading } = useTask(async () => {
   try { 
-    loading.value = true;
     await store.getTasks();
   } catch (err) {
     hasError.value = true;
-  } finally {
-    loading.value = false;
   }
-}
+});
 
 onMounted(async () => {
   if (store.tasks.length === 0) {
