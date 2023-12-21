@@ -15,26 +15,52 @@
             Add new task
           </v-btn>
 
-          <v-list lines="two">
+          <v-list v-if="!loading" lines="two">
             <v-list-item density="compact" v-for="task in filteredTasks" :key="task.id"
-              :to="{ name: RouteName.TASK, params: { id: task.id } }" :title="task.title" :subtitle="task.description">
+                :to="{ name: RouteName.TASK, params: { id: task.id } }" :title="task.title" :subtitle="task.description">
+              <template v-slot:prepend>
+                <div @click.stop>
+                  <v-checkbox :model-value="task.completed" @update:model-value="toggleTask(task)" color="success"></v-checkbox>
+                </div>
+              </template>
+
               <template v-slot:append>
                 <v-btn color="grey-lighten-1" icon="mdi-chevron-right" variant="text"></v-btn>
               </template>
             </v-list-item>
           </v-list>
+
+          <v-list v-else>
+            <v-list-item density="compact" v-for="i in 6" :key="i + 1">
+              <v-skeleton-loader type="list-item-avatar"></v-skeleton-loader>
+            </v-list-item>
+          </v-list>
         </v-col>
       </v-row>
     </v-container>
+
+    <v-snackbar v-model="hasError">
+      Something went wrong! Please try again later.
+
+      <template v-slot:actions>
+        <v-btn
+          color="pink"
+          variant="text"
+          @click="hasError = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-main>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onBeforeMount } from 'vue';
-import { Task } from '@/types/task';
+import { ref, computed, onMounted } from 'vue';
 import { removeDiacritics } from '@/utils/string';
 import { RouteName } from '@/enum/RouteName';
-import { parseTask } from '@/utils/task';
+import { useTasksStore } from '@/store/tasks';
+import { Task } from '@/types/task';
 
 enum Filter {
   ALL,
@@ -44,12 +70,16 @@ enum Filter {
 
 const query = ref('');
 
+const loading = ref(false);
+
+const hasError = ref(false);
+
 const filter = ref(Filter.ALL);
 
-const tasks = ref<Task[]>([]);
+const store = useTasksStore();
 
 const filteredTasks = computed(() => {
-  const filtered = tasks.value.filter((task) => {
+  const filtered = store.tasks.filter((task) => {
     const title = removeDiacritics(task.title.toLowerCase());
 
     const description = removeDiacritics(task.description.toLowerCase());
@@ -69,10 +99,29 @@ const filteredTasks = computed(() => {
   }
 });
 
-onBeforeMount(async () => {
-  const response = await fetch("https://6582c33c02f747c8367a2493.mockapi.io/task");
-  const json = await response.json();
-  if (!Array.isArray(json)) return;
-  tasks.value = json.map((task) => parseTask(task));
+const toggleTask = (task: Task) => {
+  try {
+    task.completed = !task.completed;
+    store.updateTask(task);
+  } catch (err) {
+    hasError.value = true;
+  }
+}
+
+const getTasks = async () => {
+  try { 
+    loading.value = true;
+    await store.getTasks();
+  } catch (err) {
+    hasError.value = true;
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(async () => {
+  if (store.tasks.length === 0) {
+    getTasks();
+  }
 });
 </script>
