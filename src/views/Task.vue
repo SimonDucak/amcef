@@ -10,7 +10,7 @@
                                 Back to tasks
                             </v-btn>
 
-                            <v-btn @click="removeTask" :loading="removing" color="error" variant="text">
+                            <v-btn v-if="isUpdating" @click="removeTask" :loading="removing" color="error" variant="text">
                                 <v-icon>mdi-trash-can</v-icon>
                                 Remove task
                             </v-btn>
@@ -34,8 +34,8 @@
                         <v-textarea placeholder="Enter description of task" v-model="task.description"
                             variant="plain"></v-textarea>
 
-                        <v-btn @click="saveTask" :loading="saving" type="submit" prepend-icon="mdi-save" size="large" block color="success" :elevation="0">
-                            Save task
+                        <v-btn @click="resolveTask" :loading="saving" type="submit" prepend-icon="mdi-save" size="large" block color="success" :elevation="0">
+                            {{ isUpdating ? 'Update task' : 'Add new task' }}
                         </v-btn>
                     </v-col>
                 </v-row>
@@ -57,11 +57,11 @@
 
             <template v-slot:actions>
                 <v-btn
-                color="pink"
-                variant="text"
-                @click="hasError = false"
+                    color="pink"
+                    variant="text"
+                    @click="hasError = false"
                 >
-                Close
+                    Close
                 </v-btn>
             </template>
         </v-snackbar>
@@ -84,6 +84,11 @@ const task = ref(store.getEmptyTask());
 
 const hasError = ref(false);
 
+const isUpdating = computed<boolean>(() => {
+    const { name } = router.currentRoute.value;
+    return name === RouteName.TASK;
+});
+
 const deadline = computed<string>(() => {
     const { deadline } = task.value;
     if (!deadline) return '';
@@ -105,9 +110,15 @@ const { perform: getTask, isRunning: taskLoading } = useTask(async () => {
     }
 });
 
-const { perform: saveTask, isRunning: saving } = useTask(async () => {
+const { perform: resolveTask, isRunning: saving } = useTask(async () => {
     try {
-        await store.updateTask(task.value);
+        if (isUpdating.value) {
+            await store.updateTask(task.value);
+        } else {
+            await store.addTask(task.value);
+            router.push({ name: RouteName.LIST });
+        } 
+            
     } catch (err) {
         hasError.value = true;
     }
@@ -132,5 +143,7 @@ const titleRules = [
     },
 ];
 
-onBeforeMount(() => getTask());
+onBeforeMount(() => {
+    if (isUpdating.value) getTask();
+});
 </script>

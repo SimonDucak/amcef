@@ -39,7 +39,7 @@ export const useTasksStore = defineStore('tasks', {
       const data = await response.json();
       return this.parseTask(data);
     },
-    async createTask(task: Task): Promise<void> {
+    async addTask(task: Task): Promise<void> {
       const response = await fetch(`${this.apiUrl}/task`, {
         method: 'POST',
         body: JSON.stringify(task),
@@ -49,7 +49,7 @@ export const useTasksStore = defineStore('tasks', {
       });
       const data = await response.json();
       const newTask = this.parseTask(data);
-      this.tasks.unshift(newTask);
+      this.tasks = [newTask, ...this.tasks];
     },
     async updateTask(task: Task): Promise<void> {
       const response = await fetch(`${this.apiUrl}/task/${task.id}`, {

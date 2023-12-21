@@ -13,6 +13,11 @@ const routes: RouteRecordRaw[] = [
     name: RouteName.TASK,
     component: () => import('@/views/Task.vue'),
   },
+  {
+    path: '/add-task',
+    name: RouteName.ADD_TASK,
+    component: () => import('@/views/Task.vue'),
+  },
 ]
 
 const router = createRouter({

@@ -11,7 +11,7 @@
             <v-radio label="Tasks to do" :value="Filter.TODO"></v-radio>
           </v-radio-group>
 
-          <v-btn prepend-icon="mdi-plus" size="large" block color="success" :elevation="0">
+          <v-btn :to="{ name: RouteName.ADD_TASK }" prepend-icon="mdi-plus" size="large" block color="success" :elevation="0">
             Add new task
           </v-btn>
 
